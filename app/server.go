@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
@@ -10,24 +11,26 @@ import (
 var _ = net.Listen
 var _ = os.Exit
 
-func main() {
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Println("Logs from your program will appear here!")
+func StartServer(ctx context.Context, addr string) (net.Listener, error) {
 
-	// Uncomment this block to pass the first stage
-	//
-	l, err := net.Listen("tcp", "0.0.0.0:6379")
+	l, err := net.Listen("tcp", addr)
 	if err != nil {
-		fmt.Println("Failed to bind to port 6379")
-		os.Exit(1)
+		fmt.Printf("Failed to bind to addr err :%v :%v", addr, err)
+		return nil, err
 	}
-	defer l.Close()
 
 	for {
+		defer l.Close()
 		conn, err := l.Accept()
 		if err != nil {
-			fmt.Println("Error accepting connection: ", err.Error())
-			os.Exit(1)
+			select {
+			case <-ctx.Done():
+				fmt.Println("Server Shutting Down")
+				return nil, err
+			default:
+				fmt.Printf("recieved error: %v", err)
+				continue
+			}
 		}
 		go handleConnection(conn)
 	}
@@ -49,7 +52,7 @@ func handleConnection(connection net.Conn) {
 		input := string(buf[:n])
 		fmt.Println("Received:", input)
 
-		if input == "PING\r\n" {
+		if input == "PING\n" {
 			connection.Write([]byte("+PONG\r\n"))
 		} else {
 			connection.Write([]byte("-ERR unknown command\r\n"))
