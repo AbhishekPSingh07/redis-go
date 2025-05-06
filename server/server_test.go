@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"bufio"
@@ -41,7 +41,7 @@ func TestPingCommand(t *testing.T) {
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("PING\r\n"))
+	_, err = conn.Write([]byte("PING"))
 	if err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
@@ -52,7 +52,7 @@ func TestPingCommand(t *testing.T) {
 		t.Fatalf("Failed to read: %v", err)
 	}
 
-	expected := "+PONG\r\n"
+	expected := "PONG"
 	if response != expected {
 		t.Errorf("Expected %q, got %q", expected, response)
 	}
@@ -65,7 +65,7 @@ func TestUnknownCommand(t *testing.T) {
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("FOOBAR\r\n"))
+	_, err = conn.Write([]byte("FOOBAR1"))
 	if err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
@@ -95,7 +95,7 @@ func TestConcurrentPings(t *testing.T) {
 			defer conn.Close()
 
 			for j := 0; j < 5; j++ {
-				_, err = conn.Write([]byte("PING\n"))
+				_, err = conn.Write([]byte("PING"))
 				if err != nil {
 					errs <- err
 					return
@@ -107,7 +107,7 @@ func TestConcurrentPings(t *testing.T) {
 					errs <- err
 					return
 				}
-				if response != "+/PONG/n" {
+				if response != "PONG" {
 					errs <- fmt.Errorf("client %d expected %q got %q", id, "PONG", response)
 					return
 				}
