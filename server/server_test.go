@@ -25,6 +25,7 @@ func TestMain(m *testing.M) {
 	}
 	serverAddr = listener.Addr().String()
 	stopServer = cancel
+	fmt.Printf("StartServer")
 
 	code := m.Run() // Run tests
 
@@ -41,7 +42,7 @@ func TestPingCommand(t *testing.T) {
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("PING"))
+	_, err = conn.Write([]byte("PING\n"))
 	if err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
@@ -53,7 +54,7 @@ func TestPingCommand(t *testing.T) {
 	}
 
 	expected := "PONG"
-	if response != expected {
+	if strings.TrimSpace(response) != expected {
 		t.Errorf("Expected %q, got %q", expected, response)
 	}
 }
@@ -65,7 +66,7 @@ func TestUnknownCommand(t *testing.T) {
 	}
 	defer conn.Close()
 
-	_, err = conn.Write([]byte("FOOBAR1"))
+	_, err = conn.Write([]byte("FOOBAR1\n"))
 	if err != nil {
 		t.Fatalf("Failed to write: %v", err)
 	}
@@ -95,7 +96,7 @@ func TestConcurrentPings(t *testing.T) {
 			defer conn.Close()
 
 			for j := 0; j < 5; j++ {
-				_, err = conn.Write([]byte("PING"))
+				_, err = conn.Write([]byte("PING\n"))
 				if err != nil {
 					errs <- err
 					return
@@ -107,7 +108,7 @@ func TestConcurrentPings(t *testing.T) {
 					errs <- err
 					return
 				}
-				if response != "PONG" {
+				if strings.TrimSpace(response) != "PONG" {
 					errs <- fmt.Errorf("client %d expected %q got %q", id, "PONG", response)
 					return
 				}

@@ -49,7 +49,6 @@ func handleConnection(connection net.Conn) {
 	scanner := bufio.NewScanner(connection)
 	for scanner.Scan() {
 		input := scanner.Text()
-		fmt.Println("Received:", input)
 
 		if strings.HasPrefix(input, "PING") {
 			rest := strings.TrimSpace(strings.TrimPrefix(input, "PING"))
@@ -60,7 +59,7 @@ func handleConnection(connection net.Conn) {
 				connection.Write([]byte("PONG rest\n"))
 			}
 		} else {
-			connection.Write([]byte("-ERR unknown command\r\n"))
+			connection.Write([]byte("-ERR unknown command\n"))
 		}
 	}
 }
