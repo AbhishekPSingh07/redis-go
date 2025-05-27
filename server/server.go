@@ -45,20 +45,28 @@ func StartServer(ctx context.Context, addr string) (net.Listener, error) {
 
 func handleConnection(connection net.Conn) {
 	defer connection.Close()
-
 	scanner := bufio.NewScanner(connection)
+
 	for scanner.Scan() {
-		input := scanner.Text()
+		input := strings.TrimSpace(scanner.Text())
+		fields := strings.Fields(input)
+		if len(fields) == 0 {
+			continue
+		}
 
-		if strings.HasPrefix(input, "PING") {
-			rest := strings.TrimSpace(strings.TrimPrefix(input, "PING"))
+		cmd := fields[0]
+		args := strings.Join(fields[1:], " ")
 
-			if rest == "" {
+		switch cmd {
+		case "PING":
+			if args == "" {
 				connection.Write([]byte("PONG\n"))
 			} else {
-				connection.Write([]byte("PONG rest\n"))
+				connection.Write([]byte(fmt.Sprintf("PONG %s\n", args)))
 			}
-		} else {
+		case "echo":
+			connection.Write([]byte(fmt.Sprintln(args)))
+		default:
 			connection.Write([]byte("-ERR unknown command\n"))
 		}
 	}

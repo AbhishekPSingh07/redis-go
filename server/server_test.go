@@ -59,6 +59,55 @@ func TestPingCommand(t *testing.T) {
 	}
 }
 
+func TestMultiplePingCommand(t *testing.T) {
+	conn, err := net.Dial("tcp", serverAddr)
+	if err != nil {
+		t.Fatalf("Failed to connect: %v", err)
+	}
+	defer conn.Close()
+	for i := 0; i < 5; i++ {
+		_, err = conn.Write([]byte(fmt.Sprintf("PING %d\n", i)))
+		if err != nil {
+			t.Fatalf("Failed to write: %v", err)
+		}
+
+		reader := bufio.NewReader(conn)
+		response, err := reader.ReadString('\n')
+		if err != nil {
+			t.Fatalf("Failed to read: %v", err)
+		}
+
+		expected := fmt.Sprintf("PONG %d", i)
+		if strings.TrimSpace(response) != expected {
+			t.Errorf("Expected %q, got %q", expected, response)
+		}
+	}
+}
+
+func TestEchoCommand(t *testing.T) {
+	conn, err := net.Dial("tcp", serverAddr)
+	if err != nil {
+		t.Fatalf("Failed to connect;; %v", err)
+	}
+	defer conn.Close()
+
+	_, err = conn.Write([]byte("echo Abhishek test\n"))
+	if err != nil {
+		t.Fatalf("Failed to write %v", err)
+	}
+
+	reader := bufio.NewReader(conn)
+	response, err := reader.ReadString('\n')
+	if err != nil {
+		t.Fatalf("Failed to read %v", err)
+	}
+
+	expected := "Abhishek test"
+	if strings.TrimSpace(response) != expected {
+		t.Errorf("Expected %q got %q", expected, response)
+	}
+}
+
 func TestUnknownCommand(t *testing.T) {
 	conn, err := net.Dial("tcp", serverAddr)
 	if err != nil {
