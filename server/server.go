@@ -46,7 +46,7 @@ func StartServer(ctx context.Context, addr string) (net.Listener, error) {
 func handleConnection(connection net.Conn) {
 	defer connection.Close()
 	scanner := bufio.NewScanner(connection)
-
+	setCommandArgs := ""
 	for scanner.Scan() {
 		input := strings.TrimSpace(scanner.Text())
 		fields := strings.Fields(input)
@@ -66,6 +66,10 @@ func handleConnection(connection net.Conn) {
 			}
 		case "echo":
 			connection.Write([]byte(fmt.Sprintln(args)))
+		case "SET":
+			setCommandArgs = args
+		case "GET":
+			connection.Write([]byte(fmt.Sprintln(setCommandArgs)))
 		default:
 			connection.Write([]byte("-ERR unknown command\n"))
 		}
