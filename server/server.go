@@ -47,6 +47,7 @@ func handleConnection(connection net.Conn) {
 	defer connection.Close()
 	scanner := bufio.NewScanner(connection)
 	setCommandArgs := ""
+	setCommandKey := ""
 	for scanner.Scan() {
 		input := strings.TrimSpace(scanner.Text())
 		fields := strings.Fields(input)
@@ -67,9 +68,16 @@ func handleConnection(connection net.Conn) {
 		case "echo":
 			connection.Write([]byte(fmt.Sprintln(args)))
 		case "SET":
-			setCommandArgs = args
+			setCommandFields := strings.Fields(strings.TrimSpace(args))
+			setCommandKey = setCommandFields[0]
+			setCommandArgs = strings.Join(setCommandFields[1:], " ")
+			connection.Write([]byte("\n"))
 		case "GET":
-			connection.Write([]byte(fmt.Sprintln(setCommandArgs)))
+			if strings.TrimSpace(args) == setCommandKey {
+				connection.Write([]byte(fmt.Sprintln(setCommandArgs)))
+			} else {
+				connection.Write([]byte("-ERR no such key set\n"))
+			}
 		default:
 			connection.Write([]byte("-ERR unknown command\n"))
 		}

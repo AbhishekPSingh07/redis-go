@@ -173,7 +173,7 @@ func TestConcurrentPings(t *testing.T) {
 	}
 }
 
-func TestSetAndGet(t *testing.T) {
+func TestSetCommand(t *testing.T) {
 	tests := []struct {
 		name        string
 		input       string
@@ -216,6 +216,74 @@ func TestSetAndGet(t *testing.T) {
 
 			reader := bufio.NewReader(conn)
 			response, err := reader.ReadString('\n')
+			if err != nil {
+				t.Fatalf("Failed to read %v", err)
+			}
+			if tc.wantErr {
+				if !strings.Contains(response, tc.expectedErr) {
+					t.Fatalf("Expected error : %s Got : %s", tc.expectedErr, response)
+				}
+			} else {
+				if tc.expected != response {
+					t.Fatalf("Expected : %s: Got : %s", tc.expected, response)
+				}
+			}
+
+		})
+	}
+}
+
+func TestGetCommand(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       string
+		expected    string
+		wantErr     bool
+		expectedErr string
+	}{
+		{
+			name:        "Unknown Command for case Insensitivity",
+			input:       "get\n",
+			expectedErr: "-ERR",
+			wantErr:     true,
+		},
+		{
+			name:        "Unknown Command for case Insensitivity",
+			input:       "GET aBhishek\n",
+			expectedErr: "-ERR",
+			wantErr:     true,
+		},
+		{
+			name:     "Succesful Get Command",
+			input:    "SET abhishek\n",
+			expected: "\n",
+			wantErr:  false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			conn, err := net.Dial("tcp", serverAddr)
+			if err != nil {
+				t.Fatalf("Failed to connect: %v", err)
+			}
+			defer conn.Close()
+			// execute test command first TestGetCommand
+			_, err = conn.Write([]byte("SET abhishek singh\n"))
+			if err != nil {
+				t.Fatalf("Failed to write: %v", err)
+			}
+			reader := bufio.NewReader(conn)
+			response, err := reader.ReadString('\n')
+			if err != nil {
+				t.Fatalf("Failed to read %v", err)
+			}
+			_, err = conn.Write([]byte(tc.input))
+			if err != nil {
+				t.Fatalf("Failed to write: %v", err)
+			}
+
+			response, err = reader.ReadString('\n')
 			if err != nil {
 				t.Fatalf("Failed to read %v", err)
 			}
